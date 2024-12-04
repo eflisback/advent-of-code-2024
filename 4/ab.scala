@@ -6,7 +6,8 @@ type Word = Array[Coordinate]
   val lines = io.Source.fromFile("input.txt").getLines.toVector
   val matrix: CharMatrix = parseCharMatrix(lines)
 
-  print(a(matrix))
+  println(a(matrix))
+  println(b(matrix))
 
 def parseCharMatrix(ls: Iterable[String]) =
   (for l <- ls yield l.toCharArray).toArray
@@ -43,9 +44,9 @@ def getWords(
   val newVisited = coord :: visited
 
   if visited.isEmpty then
-    getNeighbors(coord).flatMap(neighbor =>
-      getWords(neighbor, matrix, newVisited)
-    ).toSet
+    getNeighbors(coord)
+      .flatMap(neighbor => getWords(neighbor, matrix, newVisited))
+      .toSet
   else
     val last = coord
     val secondLast = visited.head
@@ -58,3 +59,23 @@ def a(matrix: CharMatrix) =
     x <- matrix.indices
     y <- matrix(x).indices
   yield getWords((x, y), matrix)).flatten.count(_.isDefined)
+
+def isX(coord: Coordinate, matrix: CharMatrix): Boolean =
+  val word = "MAS"
+
+  val firstList =
+    List((coord._1 - 1, coord._2 - 1), coord, (coord._1 + 1, coord._2 + 1))
+  val firstWord = (for c <- firstList yield matrix(c._1)(c._2)).mkString
+
+  val secondList =
+    List((coord._1 + 1, coord._2 - 1), coord, (coord._1 - 1, coord._2 + 1))
+  val secondWord = (for c <- secondList yield matrix(c._1)(c._2)).mkString
+
+  (firstWord == word || firstWord.reverse == word) && (secondWord == word || secondWord.reverse == word)
+
+def b(matrix: CharMatrix) =
+  (for
+    x <- 1 until matrix.size - 1
+    y <- 1 until matrix(x).size - 1
+    if matrix(x)(y) == 'A'
+  yield isX((x, y), matrix)).count(_ == true)
