@@ -48,9 +48,7 @@ def getWords(
       .flatMap(neighbor => getWords(neighbor, matrix, newVisited))
       .toSet
   else
-    val last = coord
-    val secondLast = visited.head
-    val direction = getDirection(secondLast, last)
+    val direction = getDirection(visited.head, coord)
     val nextCoord = (coord._1 + direction._1, coord._2 + direction._2)
     getWords(nextCoord, matrix, newVisited)
 
