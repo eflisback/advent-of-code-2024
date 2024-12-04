@@ -63,15 +63,24 @@ def a(matrix: CharMatrix) =
 def isX(coord: Coordinate, matrix: CharMatrix): Boolean =
   val word = "MAS"
 
-  val firstList =
-    List((coord._1 - 1, coord._2 - 1), coord, (coord._1 + 1, coord._2 + 1))
-  val firstWord = (for c <- firstList yield matrix(c._1)(c._2)).mkString
+  def extractWord(offsets: List[(Int, Int)]): String =
+    offsets
+      .map((dx, dy) =>
+        val (x, y) = (coord._1 + dx, coord._2 + dy)
+        matrix(x)(y)
+      )
+      .mkString
 
-  val secondList =
-    List((coord._1 + 1, coord._2 - 1), coord, (coord._1 - 1, coord._2 + 1))
-  val secondWord = (for c <- secondList yield matrix(c._1)(c._2)).mkString
+  val diagonal1 = List((-1, -1), (0, 0), (1, 1))
+  val diagonal2 = List((1, -1), (0, 0), (-1, 1))
 
-  (firstWord == word || firstWord.reverse == word) && (secondWord == word || secondWord.reverse == word)
+  val firstWord = extractWord(diagonal1)
+  val secondWord = extractWord(diagonal2)
+
+  def matchesWord(wordToCheck: String): Boolean =
+    wordToCheck == word || wordToCheck.reverse == word
+
+  matchesWord(firstWord) && matchesWord(secondWord)
 
 def b(matrix: CharMatrix) =
   (for
