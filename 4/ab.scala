@@ -56,6 +56,7 @@ def a(matrix: CharMatrix) =
   (for
     x <- matrix.indices
     y <- matrix(x).indices
+    if matrix(x)(y) == 'X'
   yield getWords((x, y), matrix)).flatten.count(_.isDefined)
 
 def isX(coord: Coordinate, matrix: CharMatrix): Boolean =
