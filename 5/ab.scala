@@ -4,6 +4,7 @@
   val updateLines = remainingLines.drop(1)
 
   println(a(ruleLines, updateLines))
+  println(b(ruleLines, updateLines))
 
 def getRuleMap(ruleLines: Vector[String]) =
   ruleLines
@@ -38,5 +39,29 @@ def a(ruleLines: Vector[String], updateLines: Vector[String]) =
 
   (for
     update <- updates
-    if isValid(update, ruleMap.filter((k, _) => update.contains(k)))
+    if isValid(update, ruleMap)
   yield update(math.floor(update.size / 2).toInt)).sum
+
+def getCorrectedUpdate(
+    update: Array[Int],
+    ruleMap: Map[Int, Set[Int]]
+) =
+  val filteredKeys = ruleMap.filterKeys(k => update.contains(k))
+  val filteredValues =
+    filteredKeys.map((key, valueSet) => key -> valueSet.filter(update.contains))
+
+  val positionMap =
+    filteredValues.map((key, valueSet) => key -> valueSet.size).toMap
+
+  update.sortBy(value => positionMap.getOrElse(value, 0))
+
+def b(ruleLines: Vector[String], updateLines: Vector[String]) =
+  val ruleMap = getRuleMap(ruleLines)
+  val updates = getUpdates(updateLines)
+
+  (for
+    update <- updates
+    if !isValid(update, ruleMap)
+  yield getCorrectedUpdate(update, ruleMap)(
+    math.floor(update.size / 2).toInt
+  )).sum
