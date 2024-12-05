@@ -20,10 +20,17 @@ def getUpdates(updateLines: Vector[String]) =
   for line <- updateLines yield line.split(',').map(_.toInt)
 
 def isValid(update: Array[Int], ruleMap: Map[Int, Set[Int]]): Boolean =
-    val relevantRules = ruleMap.filter((k, _) => update.contains(k))
+  if update.isEmpty then return true
 
-    
-´
+  val current = update.head
+  val remainingUpdate = update.tail
+
+  if remainingUpdate.exists(next =>
+      ruleMap.get(next).exists(_.contains(current))
+    )
+  then return false
+
+  isValid(remainingUpdate, ruleMap.filterKeys(_ != current).toMap)
 
 def a(ruleLines: Vector[String], updateLines: Vector[String]) =
   val ruleMap = getRuleMap(ruleLines)
@@ -31,5 +38,5 @@ def a(ruleLines: Vector[String], updateLines: Vector[String]) =
 
   (for
     update <- updates
-    if isValid(update, ruleMap)
+    if isValid(update, ruleMap.filter((k, _) => update.contains(k)))
   yield update(math.floor(update.size / 2).toInt)).sum
