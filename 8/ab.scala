@@ -8,6 +8,7 @@ type Coordinate = (Int, Int)
   val lines = io.Source.fromFile("input.txt").getLines.toVector
 
   println(a(lines))
+  println(b(lines))
 
 def getMap(lines: Vector[String]): AntennaMap =
   lines.map(_.toCharArray).transpose.map(_.toArray)
@@ -27,7 +28,7 @@ def getfrequencies(map: AntennaMap) =
 
   frequencies.view.mapValues(s => s.toSet).toMap
 
-def getAntinodes(a: Coordinate, b: Coordinate): Set[Coordinate] =
+def getAntinodesAround(a: Coordinate, b: Coordinate) =
   val distanceX = b._1 - a._1
   val distanceY = b._2 - a._2
 
@@ -48,8 +49,47 @@ def a(lines: Vector[String]) =
     antennas <- frequencies.map(_._2)
     firstAntenna <- antennas
     otherAntenna <- antennas - firstAntenna
-  yield getAntinodes(firstAntenna, otherAntenna).filterNot(p =>
+  yield getAntinodesAround(firstAntenna, otherAntenna).filterNot(p =>
     p == firstAntenna || p == otherAntenna
   )).flatten.toSet
+    .filter(point => isInBounds(point, map))
+    .size
+
+def getAntinodesAlongLine(
+    a: Coordinate,
+    b: Coordinate,
+    map: Vector[Array[Char]]
+): Set[Coordinate] =
+  val distanceX = b._1 - a._1
+  val distanceY = b._2 - a._2
+
+  val backwardsLocations: MSet[Coordinate] = MSet(a)
+  val forwardsLocations: MSet[Coordinate] = MSet(b)
+
+  var currentPoint = a
+
+  while isInBounds(currentPoint, map) do
+    val point = (currentPoint._1 - distanceX, currentPoint._2 - distanceY)
+    backwardsLocations += point
+    currentPoint = point
+
+  currentPoint = b
+
+  while isInBounds(currentPoint, map) do
+    val point = (currentPoint._1 + distanceX, currentPoint._2 + distanceY)
+    forwardsLocations += point
+    currentPoint = point
+
+  backwardsLocations.toSet ++ forwardsLocations.toSet
+
+def b(lines: Vector[String]) =
+  val map = getMap(lines)
+  val frequencies = getfrequencies(map)
+
+  (for
+    antennas <- frequencies.map(_._2)
+    firstAntenna <- antennas
+    otherAntenna <- antennas - firstAntenna
+  yield getAntinodesAlongLine(firstAntenna, otherAntenna, map)).flatten.toSet
     .filter(point => isInBounds(point, map))
     .size
