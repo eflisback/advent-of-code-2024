@@ -58,8 +58,5 @@ def a(input: String, debug: Boolean = false) =
     println
   
   getRearrangedBlocks(blocks, freeIndexes, debug).zipWithIndex
-    .map((maybeInt, i) => maybeInt.getOrElse(0) * i)
+    .map((maybeInt, i) => maybeInt.getOrElse(0).toLong * i.toLong)
     .sum
-
-// Wrong answers
-// 829320760
