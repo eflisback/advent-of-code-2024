@@ -1,44 +1,37 @@
+import scala.collection.mutable.Map as MMap
+
 @main def run =
   val input = io.Source.fromFile("input.txt").getLines.toVector.head
 
-  println("a: " + a(input))
+  println("a: " + getMutatedStones(getStones(input), 25).values.sum)
+  println("b: " + getMutatedStones(getStones(input), 75).values.sum)
 
-// Vector type for fast insertion
-def getStones(input: String) =
-  (for num <- input.split(" ") yield num.toLong).toVector
+def getStones(input: String) = for num <- input.split(" ") yield num.toLong
 
-def getMutatedStones(stones: Vector[Long]) = 
-    var i = 0
-    var mutation = stones
+def getMutatedStones(stones: Iterable[Long], blinks: Int): Map[Long, Long] =
+  // The line below, I do admit, was written by ChatGPT
+  // It generates a map where each stone number is a key
+  // that has the value of the number of times it occurs
+  var stateCounts = stones.groupMapReduce(identity)(_ => 1L)(_ + _)
 
-    while i < mutation.size do
-        val stone = mutation(i)
-        val str = stone.toString
+  for _ <- 1 to blinks do
+    val newStateCounts = MMap[Long, Long]()
 
-        if stone == 0 then
-            mutation = mutation.updated(i, 1)
-        else if str.length % 2 == 0 then
-            val (leftStr, rightStr) = str.splitAt(str.length / 2)
-            val left = leftStr.toLong
-            val right = rightStr.toLong
-            mutation = mutation.updated(i, left).patch(i + 1, Seq(right), 0)
-            i += 1
-        else
-            mutation = mutation.updated(i, stone * 2024)
-        
-        i += 1
-      
-    mutation
+    for (stone, count) <- stateCounts do
+      val str = stone.toString
+      if stone == 0 then
+        newStateCounts(1L) = newStateCounts.getOrElse(1L, 0L) + count
+      else if str.length % 2 == 0 then
+        val (leftStr, rightStr) = str.splitAt(str.length / 2)
+        val left = leftStr.toLong
+        val right = rightStr.toLong
+        newStateCounts(left) = newStateCounts.getOrElse(left, 0L) + count
+        newStateCounts(right) = newStateCounts.getOrElse(right, 0L) + count
+      else
+        val newStone = stone * 2024
+        newStateCounts(newStone) =
+          newStateCounts.getOrElse(newStone, 0L) + count
 
+    stateCounts = newStateCounts.toMap
 
-def getFinalStoneArrangement(stones: Vector[Long], remainingBlinks: Int): Vector[Long] =
-    if remainingBlinks == 0 then return stones
-
-    val mutatedStones = getMutatedStones(stones)
-
-    getFinalStoneArrangement(mutatedStones, remainingBlinks - 1)
-
-def a(input: String) =
-  val stones = getStones(input)
-
-  getFinalStoneArrangement(stones, 25).size
+  stateCounts
