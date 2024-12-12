@@ -1,10 +1,13 @@
+import collection.mutable.Set as MSet
+
 type ConsumableMap = Array[Array[Option[Coordinate]]]
 
 case class Coordinate(x: Int, y: Int)
 case class Region(
     regionChar: Char,
     area: Int,
-    perimeter: Int,
+    // A border is represented by the set of its two adjacent tiles
+    borders: Set[Set[Coordinate]],
     coordinates: Set[Coordinate]
 )
 
@@ -19,7 +22,7 @@ def getMap(lines: Vector[String]) =
 def getNeighbors(
     point: Coordinate,
     map: Array[Array[Char]]
-): Vector[Option[(Coordinate, Char)]] =
+): Vector[(Coordinate, Char)] =
   val directions = Vector((1, 0), (-1, 0), (0, 1), (0, -1))
 
   directions.map((dx, dy) =>
@@ -27,8 +30,8 @@ def getNeighbors(
     val newY = point.y + dy
 
     if (0 until map.size).contains(newX) && (0 until map(0).size).contains(newY)
-    then Some((Coordinate(newX, newY), map(newX)(newY)))
-    else None
+    then (Coordinate(newX, newY), map(newX)(newY))
+    else (Coordinate(newX, newY), '-')
   )
 
 def extractRegion(
@@ -37,38 +40,52 @@ def extractRegion(
     map: Array[Array[Char]],
     coordinates: Set[Coordinate] = Set(),
     area: Int = 0,
-    perimeter: Int = 0
+    borders: Set[Set[Coordinate]] = Set()
 ): Region =
   if (coordinates.contains(point)) {
-    return Region(regionChar, area, perimeter, coordinates)
+    return Region(regionChar, area, borders, coordinates)
   }
 
   var newCoordinates = coordinates + point
   var newArea = area + 1
-  var newPerimeter = perimeter
+  var newBorders = MSet.from(borders)
 
   val neighbors = getNeighbors(point, map)
 
-  neighbors.foreach {
-    case Some((neighborCoord, neighborChar)) =>
-      if neighborChar == regionChar then
-        val regionResult = extractRegion(
-          neighborCoord,
-          regionChar,
-          map,
-          newCoordinates,
-          newArea,
-          newPerimeter
-        )
-        newCoordinates = regionResult.coordinates
-        newArea = regionResult.area
-        newPerimeter = regionResult.perimeter
-      else newPerimeter += 1
-    case None =>
-      newPerimeter += 1
-  }
+  neighbors.foreach((nCoord, nChar) =>
+    if nChar == regionChar then
+      val regionResult = extractRegion(
+        nCoord,
+        regionChar,
+        map,
+        newCoordinates,
+        newArea,
+        newBorders.toSet
+      )  
+      newCoordinates = regionResult.coordinates
+      newArea = regionResult.area
+      newBorders = MSet.from(regionResult.borders)
+    else newBorders.add(Set(point, nCoord))
 
-  Region(regionChar, newArea, newPerimeter, newCoordinates)
+  )
+
+  // neighbors.foreach((neighborCoord, neighborChar)) =>
+  //     if neighborChar == regionChar then
+  //       val regionResult = extractRegion(
+  //         neighborCoord,
+  //         regionChar,
+  //         map,
+  //         newCoordinates,
+  //         newArea,
+  //         newBorders
+  //       )
+  //       newCoordinates = regionResult.coordinates
+  //       newArea = regionResult.area
+  //       newBorders = regionResult.borders
+  //     else newBorders.add(Set(point, neighborCoord))
+  // ))
+
+  Region(regionChar, newArea, newBorders.toSet, newCoordinates)
 
 def updateConsumableMap(
     consumableMap: Array[Array[Option[Coordinate]]],
@@ -104,5 +121,9 @@ def a(lines: Vector[String]) =
     // println("Region " + region.regionChar)
     // println(" - Area = " + region.area)
     // println(" - Perimeter = " + region.perimeter)
-    region.area * region.perimeter
+    region.area * region.borders.size
   ).sum
+
+def b(lines: Vector[String]) =
+  val map = getMap(lines)
+  val regions = getRegions(map)
