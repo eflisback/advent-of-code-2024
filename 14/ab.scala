@@ -6,6 +6,7 @@ case class Robot(position: Coordinate, velocity: Velocity)
   val lines = io.Source.fromFile("input.txt").getLines.toVector
 
   println("a: " + a(lines))
+  println("b: " + b(lines))
 
 def getRobots(lines: Vector[String]) =
   for line <- lines yield
@@ -54,3 +55,35 @@ def a(lines: Vector[String]) =
     if position.x > center._1 && position.y > center._2 then q4 += 1
 
   q1 * q2 * q3 * q4
+
+def getChristmasTrees(mapDimensions: (Int, Int)) =
+  import collection.mutable.Set as MSet
+  val christmasTrees: MSet[Set[Coordinate]] = MSet()
+
+  val centerX = (mapDimensions._1 - 1).toDouble / 2
+
+  for y <- 0 until mapDimensions._2 do
+    val christmasTree: MSet[Coordinate] = MSet()
+
+    for yy <- y until mapDimensions._2
+    do
+        val left = Coordinate(x = (centerX - yy).toInt, yy)
+        val right = Coordinate(x = (centerX + yy).toInt, yy)
+        if left.x >= 0 then
+            christmasTree.add(left)
+            christmasTree.add(right)
+
+        christmasTrees.add(christmasTree.toSet)
+
+  christmasTrees.toSet
+
+def b(lines: Vector[String]) =
+  val robots = getRobots(lines)
+  val mapDimensions = (101, 103)
+
+  val christmasTrees: Set[Set[Coordinate]] = getChristmasTrees(mapDimensions)
+
+  (for
+    i <- 1 to 10000
+    if christmasTrees.exists(christmasTree => christmasTree.subsetOf(getFinalPositions(robots, mapDimensions, i).toSet) && christmasTree.size > robots.size / 2)
+  yield i).min
